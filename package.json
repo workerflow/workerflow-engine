@@ -7,17 +7,20 @@
     "type": "git",
     "url": "git@github.com:workerflow/workerflow-engine.git"
   },
+  "main": "src/workerflow-engine.ts",
   "license": "MIT",
   "engines": {
     "node": ">=12.0.0"
   },
   "scripts": {
-    "test": "ts-node test.ts"
+    "test": "snyk test && ts-node test.ts",
+    "snyk-protect": "snyk protect"
   },
   "devDependencies": {
     "@types/node": "^14.14.31",
     "ts-node": "^9.1.1",
-    "typescript": "^4.2"
+    "typescript": "^4.2",
+    "snyk": "^1.463.0"
   },
   "dependencies": {}
 }
