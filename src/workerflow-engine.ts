@@ -51,7 +51,7 @@ export default class Engine {
   analyzeDependencies(task: ITask): ITask[] {
     let tasks: ITask[] = [];
     for (let t of this.workflow.tasks) {
-      if (t.requires.indexOf(task.name)) {
+      if (t.requires.indexOf(task.name) != -1) {
         tasks.push(t);
       }
     }

@@ -1,34 +1,34 @@
 export interface ICallback {
-  (...args: any[]): any
+  (...args: any[]): any;
 }
 export interface ICallbackBoolean {
-  (...args: any[]): boolean
+  (...args: any[]): boolean;
 }
 
 export interface ITask {
-  name: string
+  name: string;
 
-  input?: ICallback
+  input?: ICallback;
 
   // repeat
-  repeat?: number
+  repeat?: number;
 
   // while
-  fwhile?: ICallbackBoolean
-  bwhile?: boolean // just a expr must return boolean
+  fwhile?: ICallbackBoolean;
+  bwhile?: boolean; // just a expr must return boolean
 
   // if
-  fif?: ICallbackBoolean
-  bif?: boolean
-  else?: ICallback
+  fif?: ICallbackBoolean;
+  bif?: boolean;
+  else?: ICallback;
 
-  func: ICallback
+  func: ICallback;
 
-  output: ICallback
+  output: ICallback;
 }
 
 export interface IWorkflow {
-  name: string
-  apiVersion: string
-  tasks(): ITask[]
+  name: string;
+  apiVersion: string;
+  tasks(): ITask[];
 }
