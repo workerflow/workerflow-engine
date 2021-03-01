@@ -1,4 +1,4 @@
-import { ITask, IWorkflow } from "../src/workflow";
+import { ITask, IWorkflow } from "../src/types";
 
 export class Workflow implements IWorkflow {
   name: string;

@@ -7,7 +7,7 @@
     "type": "git",
     "url": "git@github.com:workerflow/workerflow-engine.git"
   },
-  "main": "src/workerflow-engine.ts",
+  "main": "src/engine.ts",
   "license": "MIT",
   "engines": {
     "node": ">=12.0.0"

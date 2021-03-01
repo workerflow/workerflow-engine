@@ -1,4 +1,4 @@
-import Engine from "./src/workerflow-engine";
+import Engine from "./src/engine";
 
 function main() {
   if (process.argv.length <= 2) {

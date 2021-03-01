@@ -1,4 +1,4 @@
-import { ITask, IWorkflow, TaskType } from "../src/workflow";
+import { ITask, IWorkflow, TaskType } from "../src/types";
 
 export class Workflow implements IWorkflow {
   name: string;

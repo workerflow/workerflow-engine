@@ -1,5 +1,4 @@
-import { ITask, IWorkflow, TaskType } from "./workflow";
-import { TaskStatus } from "./types";
+import { ITask, IWorkflow, TaskStatus, TaskType } from "./types";
 
 export default class Engine {
   private dataFlow: Map<string, any> = new Map();
