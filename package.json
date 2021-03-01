@@ -13,8 +13,8 @@
     "node": ">=12.0.0"
   },
   "scripts": {
-    "test": "snyk test && ts-node test.ts",
-    "snyk-protect": "snyk protect"
+    "test": "ts-node test.ts",
+    "snyk-protect": "snyk test && snyk protect"
   },
   "devDependencies": {
     "@types/node": "^14.14.31",

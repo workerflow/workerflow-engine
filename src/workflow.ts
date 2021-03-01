@@ -1,33 +1,33 @@
-export interface ICallback {
-  (...args: any[]): any;
-}
-
-export interface ICallbackBoolean {
-  (...args: any[]): boolean;
+export enum TaskType {
+  simple,
+  if,
+  while,
+  repeat,
 }
 
 export interface ITask {
   name: string;
 
-  start: boolean;
+  start?: boolean;
 
-  input?: ICallback;
+  type?: TaskType;
 
-  // repeat times
-  repeat?: number | boolean;
+  repeat?: (...args: any[]) => boolean | number;
 
-  // while
-  while?: ICallbackBoolean | boolean;
+  while?: (...args: any[]) => boolean;
 
-  // if
-  if?: ICallbackBoolean | boolean;
-  else?: ICallback;
+  if?: (...args: any[]) => boolean;
+  else?: (...args: any[]) => Promise<any>;
 
-  func: ICallback;
+  func?: (...args: any[]) => Promise<any>;
 
-  output: ICallback;
+  externalFunc?: {
+    headers: Map<string, string>;
+    method: string;
+    url: string;
+  };
 
-  requires: string[];
+  requires?: string[];
 }
 
 export interface IWorkflow {

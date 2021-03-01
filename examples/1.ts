@@ -11,8 +11,9 @@ export class Workflow implements IWorkflow {
     {
       name: "step1",
       start: true,
-      func: () => {
+      func: (): Promise<string> => {
         console.log(`${this.name}: step1`);
+        return Promise.resolve("hello");
       },
       output: () => {},
       requires: [],
