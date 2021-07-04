@@ -1,9 +1,11 @@
 import { ITask, IWorkflow, TaskStatus, TaskType } from "./types";
+import logger from "./logger";
 
 export default class Engine {
   private dataFlow: Map<string, any> = new Map();
   private statusFlow: Map<string, TaskStatus> = new Map();
   private workflow: IWorkflow = { name: "", version: "", tasks: [] };
+  private starterTask: ITask = { name: "" };
   constructor(workflow: IWorkflow) {
     this.workflow = workflow;
     this.initStatus();
@@ -23,32 +25,32 @@ export default class Engine {
     let start: boolean = false;
     for (let task of this.workflow.tasks) {
       if (task.start) {
+        this.starterTask = task;
         if (!start) {
           start = true;
-          return null;
         } else {
           return new Error("multi start is not allow");
         }
       }
     }
+    if (start) {
+      return null;
+    }
     return new Error("no task to start");
   }
 
   start() {
-    for (let t of this.workflow.tasks) {
-      if (t.start) {
-        this.runner(t);
-        break;
-      }
-    }
+    this.runner(this.starterTask);
   }
 
   async runner(task: ITask): Promise<Error | null> {
     let res = await this.core(task);
 
     if (res == null) {
-      for (let t of this.analyzeDependencies(task)) {
-        this.runner(t);
+      for (let t of this.getRequires(task)) {
+        if (this.statusFlow.get(t.name) === TaskStatus.pending) {
+          this.runner(t);
+        }
       }
       return Promise.resolve(null);
     } else {
@@ -56,7 +58,44 @@ export default class Engine {
     }
   }
 
+  getRequires(task: ITask): ITask[] {
+    let tasks: ITask[] = [];
+    for (let t of this.workflow.tasks) {
+      if (t.requires && t.requires.indexOf(task.name) != -1) {
+        tasks.push(t);
+      }
+    }
+    return tasks;
+  }
+
+  async checkRequiresStatus(task: ITask): Promise<null> {
+    if (task.requires !== undefined) {
+      let requires = task.requires;
+
+      for (let i = 0; i < requires.length; i++) {
+        let status = false;
+        while (true) {
+          await new Promise(resolve => {
+            if (this.statusFlow.get(requires[i]) === TaskStatus.failure || this.statusFlow.get(requires[i]) === TaskStatus.success) {
+              status = true;
+              resolve(null);
+            } else {
+              setTimeout(resolve, 100, null);
+              logger.debug("[%s] wait for task [%s]", task.name, requires[i]);
+            }
+          })
+          if (status) {
+            break;
+          }
+        }
+      }
+    }
+    return Promise.resolve(null);
+  }
+
   async core(task: ITask): Promise<Error | null> {
+    this.statusFlow.set(task.name, TaskStatus.waiting);
+    await this.checkRequiresStatus(task);
     this.statusFlow.set(task.name, TaskStatus.running);
     if (task.type == undefined || task.type == TaskType.simple) {
       return this.functionRunner(task);
@@ -121,9 +160,10 @@ export default class Engine {
           return Promise.resolve(
             new Error(`task while condition is not support: ${task.name}`),
           );
+        default:
+          return Promise.resolve(new Error(`task type is not support: ${task.name}`));
       }
     }
-    return Promise.resolve(new Error(`task type is not support: ${task.name}`));
   }
 
   private async functionRunner(task: ITask): Promise<Error | null> {
@@ -136,7 +176,7 @@ export default class Engine {
         this.statusFlow.set(task.name, TaskStatus.success);
       } catch (err) {
         this.dataFlow.set(task.name, err);
-        this.statusFlow.set(task.name, TaskStatus.fail);
+        this.statusFlow.set(task.name, TaskStatus.failure);
       }
       return Promise.resolve(null);
     }
@@ -152,20 +192,10 @@ export default class Engine {
         this.statusFlow.set(task.name, TaskStatus.success);
       } catch (err) {
         this.dataFlow.set(task.name, err);
-        this.statusFlow.set(task.name, TaskStatus.fail);
+        this.statusFlow.set(task.name, TaskStatus.failure);
       }
       return Promise.resolve(null);
     }
-  }
-
-  analyzeDependencies(task: ITask): ITask[] {
-    let tasks: ITask[] = [];
-    for (let t of this.workflow.tasks) {
-      if (t.requires && t.requires.indexOf(task.name) != -1) {
-        tasks.push(t);
-      }
-    }
-    return tasks;
   }
 
   stop() {

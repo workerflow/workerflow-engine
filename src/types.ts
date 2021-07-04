@@ -7,9 +7,10 @@ export enum TaskType {
 
 export enum TaskStatus {
   pending,
+  waiting,
   running,
   success,
-  fail,
+  failure,
 }
 
 export interface ITask {
