@@ -2,7 +2,7 @@ import { ITask, IWorkflow, TaskStatus, TaskType } from "./types";
 import logger from "./logger";
 
 export default class Engine {
-  private dataFlow: Map<string, any> = new Map();
+  public dataFlow: Map<string, any> = new Map();
   private statusFlow: Map<string, TaskStatus> = new Map();
   private workflow: IWorkflow = { name: "", version: "", tasks: [] };
   private starterTask: ITask = { name: "" };
@@ -12,6 +12,10 @@ export default class Engine {
     let startChecker = this.checkStart();
     if (startChecker != null) {
       throw startChecker;
+    }
+    let nameUniqueChecker = this.checkNameUnique();
+    if (nameUniqueChecker != null) {
+      throw nameUniqueChecker;
     }
   }
 
@@ -37,6 +41,18 @@ export default class Engine {
       return null;
     }
     return new Error("no task to start");
+  }
+
+  private checkNameUnique(): Error | null {
+    let names: string[] = [];
+    for (let entry of this.workflow.tasks) {
+      if (names.indexOf(entry.name) === -1) {
+        names.push(entry.name);
+      } else {
+        return new Error(`task name is not unique: ${entry.name}`);
+      }
+    }
+    return null;
   }
 
   start() {
