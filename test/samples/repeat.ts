@@ -1,8 +1,11 @@
-import { ITask, IWorkflow } from "../src/types";
+import { ITask, IWorkflow, TaskType } from "../../src/types";
 
-export class Workflow implements IWorkflow {
+export default class Workflow implements IWorkflow {
   name: string;
   version: string;
+
+  testNum: number = 0;
+
   constructor() {
     this.name = "example1";
     this.version = "v1";
@@ -12,20 +15,22 @@ export class Workflow implements IWorkflow {
       name: "step1",
       start: true,
       func: (): Promise<string> => {
-        console.log("test step1");
-
         return Promise.resolve("hello");
       },
       requires: [],
     } as ITask,
     {
       name: "step2",
+      type: TaskType.repeat,
+      repeat: (): boolean => {
+        return this.testNum < 3;
+      },
       func: (): Promise<string> => {
         return new Promise((resolve) => {
           setTimeout(() => {
-            console.log("test step2");
+            this.testNum++;
             resolve("hello");
-          }, 3000);
+          }, 1000);
         });
       },
       requires: [
@@ -35,7 +40,6 @@ export class Workflow implements IWorkflow {
     {
       name: "step3",
       func: (): Promise<string> => {
-        console.log("test step3");
         return Promise.resolve("hello");
       },
       requires: [

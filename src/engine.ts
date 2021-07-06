@@ -1,5 +1,20 @@
 import { ITask, IWorkflow, TaskStatus, TaskType } from "./types";
 import logger from "./logger";
+import {
+  EngineError,
+  ReasonMultiStart,
+  ReasonNoStart,
+  ReasonStepNameNotUnique,
+  ReasonIfNoCondition,
+  ReasonIfNotSupport,
+  ReasonWhileNoCondition,
+  ReasonWhileNotSupport,
+  ReasonRepeatNotSupport,
+  ReasonTaskTypeNotSupport,
+  ReasonNoFunction,
+  ReasonIfNoElseFunction,
+  ReasonRepeatNoCondition
+} from "./err";
 
 export default class Engine {
   public dataFlow: Map<string, any> = new Map();
@@ -25,7 +40,7 @@ export default class Engine {
     }
   }
 
-  private checkStart(): Error | null {
+  private checkStart(): EngineError | null {
     let start: boolean = false;
     for (let task of this.workflow.tasks) {
       if (task.start) {
@@ -33,33 +48,33 @@ export default class Engine {
         if (!start) {
           start = true;
         } else {
-          return new Error("multi start is not allow");
+          return new EngineError(ReasonMultiStart, "multi start is not allow");
         }
       }
     }
     if (start) {
       return null;
     }
-    return new Error("no task to start");
+    return new EngineError(ReasonNoStart, "no task to start");
   }
 
-  private checkNameUnique(): Error | null {
+  private checkNameUnique(): EngineError | null {
     let names: string[] = [];
     for (let entry of this.workflow.tasks) {
       if (names.indexOf(entry.name) === -1) {
         names.push(entry.name);
       } else {
-        return new Error(`task name is not unique: ${entry.name}`);
+        return new EngineError(ReasonStepNameNotUnique, `task name is not unique: ${entry.name}`);
       }
     }
     return null;
   }
 
-  start() {
-    this.runner(this.starterTask);
+  start(): Promise<EngineError | null> {
+    return this.runner(this.starterTask);
   }
 
-  async runner(task: ITask): Promise<Error | null> {
+  async runner(task: ITask): Promise<EngineError | null> {
     let res = await this.core(task);
 
     if (res == null) {
@@ -109,7 +124,7 @@ export default class Engine {
     return Promise.resolve(null);
   }
 
-  async core(task: ITask): Promise<Error | null> {
+  async core(task: ITask): Promise<EngineError | null> {
     this.statusFlow.set(task.name, TaskStatus.waiting);
     await this.checkRequiresStatus(task);
     this.statusFlow.set(task.name, TaskStatus.running);
@@ -120,7 +135,7 @@ export default class Engine {
         case TaskType.if:
           if (task.if === undefined) {
             return Promise.resolve(
-              new Error(`task if is not set if condition: ${task.name}`),
+              new EngineError(ReasonIfNoCondition, `task if is not set if condition: ${task.name}`),
             );
           } else if (typeof task.if == "function") {
             if (task.if()) {
@@ -130,12 +145,12 @@ export default class Engine {
             }
           }
           return Promise.resolve(
-            new Error(`task if condition is not support: ${task.name}`),
+            new EngineError(ReasonIfNotSupport, `task if condition is not support: ${task.name}`),
           );
         case TaskType.while:
           if (task.while === undefined) {
             return Promise.resolve(
-              new Error(`task while is not set while condition: ${task.name}`),
+              new EngineError(ReasonWhileNoCondition, `task while is not set while condition: ${task.name}`),
             );
           } else if (typeof task.while === "function") {
             while (task.while()) {
@@ -147,15 +162,11 @@ export default class Engine {
             return Promise.resolve(null);
           }
           return Promise.resolve(
-            new Error(`task while condition is not support: ${task.name}`),
+            new EngineError(ReasonWhileNotSupport, `task while condition is not support: ${task.name}`),
           );
         case TaskType.repeat:
           if (task.repeat === undefined) {
-            return Promise.resolve(
-              new Error(
-                `task repeat is not set repeat condition: ${task.name}`,
-              ),
-            );
+            return Promise.resolve(new EngineError(ReasonRepeatNoCondition, `task repeat is not set repeat condition: ${task.name}`));
           } else if (typeof task.repeat === "function") {
             while (task.repeat()) {
               let res = await this.functionRunner(task);
@@ -174,17 +185,17 @@ export default class Engine {
             return Promise.resolve(null);
           }
           return Promise.resolve(
-            new Error(`task while condition is not support: ${task.name}`),
+            new EngineError(ReasonRepeatNotSupport, `task repeat condition is not support: ${task.name}`),
           );
         default:
-          return Promise.resolve(new Error(`task type is not support: ${task.name}`));
+          return Promise.resolve(new EngineError(ReasonTaskTypeNotSupport, `task type is not support: ${task.name}`));
       }
     }
   }
 
-  private async functionRunner(task: ITask): Promise<Error | null> {
+  private async functionRunner(task: ITask): Promise<EngineError | null> {
     if (task.func == undefined) {
-      return Promise.resolve(new Error(`task should set func: ${task.name}`));
+      return Promise.resolve(new EngineError(ReasonNoFunction, `task should set func: ${task.name}`));
     } else {
       try {
         const data = await task.func();
@@ -198,9 +209,9 @@ export default class Engine {
     }
   }
 
-  private async elseRunner(task: ITask): Promise<Error | null> {
+  private async elseRunner(task: ITask): Promise<EngineError | null> {
     if (task.else == undefined) {
-      return Promise.resolve(new Error(`task should set else: ${task.name}`));
+      return Promise.resolve(new EngineError(ReasonIfNoElseFunction, `task should set else: ${task.name}`));
     } else {
       try {
         const data = await task.else();

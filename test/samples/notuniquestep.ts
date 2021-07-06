@@ -1,6 +1,6 @@
-import { ITask, IWorkflow } from "../src/types";
+import { ITask, IWorkflow } from "../../src/types";
 
-export class Workflow implements IWorkflow {
+export default class Workflow implements IWorkflow {
   name: string;
   version: string;
   constructor() {
@@ -12,10 +12,17 @@ export class Workflow implements IWorkflow {
       name: "step1",
       start: true,
       func: (): Promise<string> => {
-        console.log(`${this.name}: step1`);
         return Promise.resolve("hello");
       },
-      output: () => {},
+      output: () => { },
+      requires: [],
+    } as ITask,
+    {
+      name: "step1",
+      func: (): Promise<string> => {
+        return Promise.resolve("hello");
+      },
+      output: () => { },
       requires: [],
     } as ITask,
   ];
